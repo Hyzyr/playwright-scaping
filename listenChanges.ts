@@ -1,7 +1,10 @@
-const { chromium } = require('playwright-extra');
+import { chromium } from 'playwright-extra';
+import stealth from 'puppeteer-extra-plugin-stealth';
 
-const stealth = require('puppeteer-extra-plugin-stealth')();
-chromium.use(stealth);
+chromium.use(stealth());
+
+const URL_LINK = `https://www.zillow.com/rental-manager/market-trends`;
+const API_ENDPOINT = '**/marketPages';
 
 export type housesStatistics = {
   medianRent: number;
@@ -23,12 +26,11 @@ const main = async (): Promise<listHousesStatistics> => {
 
   const results: listHousesStatistics = {};
 
-  await page.goto(`https://www.zillow.com/rental-manager/market-trends`);
+  await page.goto(URL_LINK);
 
   const listenChanges = async () => {
-    const response = await page.waitForResponse('**/marketPages', {
-      timeout: 0,
-    });
+    const response = await page.waitForResponse(API_ENDPOINT, { timeout: 0 });
+    
     if (response.status() === 200) {
       // Extract the response data here
       const resData = await response.json();
