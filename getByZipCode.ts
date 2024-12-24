@@ -49,6 +49,9 @@ const main = async (zipCode: string | number): Promise<housesStatistics> => {
   const yearlyChange = await locateByTitle(page, yearlyChangeTitle);
   const avgMarketDays = await locateByTitle(page, availableRentalsTitle);
   const availableRentals = await locateByTitle(page, avgDaysOnMarketTitle);
+  
+  context.close();
+  browser.close();
 
   return {
     medianRent: pureNumber(medianRent),
