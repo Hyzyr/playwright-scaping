@@ -1,10 +1,17 @@
 import { chromium } from 'playwright-extra';
 import stealth from 'puppeteer-extra-plugin-stealth';
+import { Page } from 'playwright';
 
 chromium.use(stealth());
 
 // {%zipCode%} is placeholder to replace
 const URL_LINK = `https://www.zillow.com/rental-manager/market-trends/{%zipCode%}/?propertyTypes=house`;
+
+const medianRentTitle = 'Median Rent';
+const monthlyChangeTitle = 'Month-Over-Month Change';
+const yearlyChangeTitle = 'Year-Over-Year Change';
+const availableRentalsTitle = 'Avg. Days On Market';
+const avgDaysOnMarketTitle = 'Available Rentals';
 
 export type housesStatistics = {
   medianRent: number;
@@ -17,7 +24,11 @@ export type housesStatistics = {
 const pureNumber = (value: string): number => {
   return parseFloat(`${value}`.replace('$', '').replace(',', ''));
 };
-
+const locateByTitle = async (page: Page, title: string) => {
+  const paragraph = page.getByText(title, { exact: true });
+  const div = paragraph.locator('..');
+  return (await div.locator('p').textContent()) ?? '';
+};
 const main = async (zipCode: string | number): Promise<housesStatistics> => {
   const browser = await chromium.launch({
     headless: false,
@@ -25,7 +36,6 @@ const main = async (zipCode: string | number): Promise<housesStatistics> => {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // await page.goto(URL_LINK);
   await page.goto(URL_LINK.replace('{%zipCode%}', zipCode.toString()));
 
   //   await page.getByPlaceholder('Search by city or ZIP').click();
@@ -34,26 +44,11 @@ const main = async (zipCode: string | number): Promise<housesStatistics> => {
   //   await page.getByRole('button', { name: 'All home types' }).click();
   //   await page.getByRole('menuitem', { name: 'Houses' }).click();
 
-  const medianRent =
-    (await page
-      .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(1)  > p')
-      .textContent()) ?? '';
-  const monthlyChange =
-    (await page
-      .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(2)  > p')
-      .textContent()) ?? '';
-  const yearlyChange =
-    (await page
-      .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(3)  > p')
-      .textContent()) ?? '';
-  const avgMarketDays =
-    (await page
-      .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(4)  > p')
-      .textContent()) ?? '';
-  const availableRentals =
-    (await page
-      .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(5)  > p')
-      .textContent()) ?? '';
+  const medianRent = await locateByTitle(page, medianRentTitle);
+  const monthlyChange = await locateByTitle(page, monthlyChangeTitle);
+  const yearlyChange = await locateByTitle(page, yearlyChangeTitle);
+  const avgMarketDays = await locateByTitle(page, availableRentalsTitle);
+  const availableRentals = await locateByTitle(page, avgDaysOnMarketTitle);
 
   return {
     medianRent: pureNumber(medianRent),
