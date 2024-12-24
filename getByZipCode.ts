@@ -2,9 +2,21 @@ const { chromium } = require('playwright-extra');
 
 const stealth = require('puppeteer-extra-plugin-stealth')();
 
-chromium.use(stealth)
+chromium.use(stealth);
 
-const main = async (zipCode) => {
+export type housesStatistics = {
+  medianRent: number;
+  monthlyChange: number;
+  yearlyChange: number;
+  availableRentals: number;
+  avgDaysOnMarket: number;
+};
+
+const pureNumber = (value: any): number => {
+  return parseFloat(`${value}`.replace('$', '').replace(',', ''));
+};
+
+const main = async (zipCode: string | number): Promise<housesStatistics> => {
   const browser = await chromium.launch({
     headless: false,
   });
@@ -25,10 +37,10 @@ const main = async (zipCode) => {
   const medianRent = await page
     .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(1)  > p')
     .textContent();
-  const monthly = await page
+  const monthlyChange = await page
     .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(2)  > p')
     .textContent();
-  const yearly = await page
+  const yearlyChange = await page
     .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(3)  > p')
     .textContent();
   const avgMarketDays = await page
@@ -38,7 +50,13 @@ const main = async (zipCode) => {
     .locator('.styles__StatContainer-sc-1wabw3l-0.dlstUI:nth-child(5)  > p')
     .textContent();
 
-  return { medianRent, monthly, yearly, avgMarketDays, availableRentals };
+  return {
+    medianRent: pureNumber(medianRent),
+    monthlyChange: pureNumber(monthlyChange),
+    yearlyChange: pureNumber(yearlyChange),
+    avgDaysOnMarket: pureNumber(avgMarketDays),
+    availableRentals: pureNumber(availableRentals),
+  };
 };
 
 main(33129).then((res) => console.log(res));

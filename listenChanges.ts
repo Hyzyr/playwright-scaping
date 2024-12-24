@@ -3,14 +3,25 @@ const { chromium } = require('playwright-extra');
 const stealth = require('puppeteer-extra-plugin-stealth')();
 chromium.use(stealth);
 
-const main = async () => {
+export type housesStatistics = {
+  medianRent: number;
+  monthlyChange: number;
+  yearlyChange: number;
+  availableRentals: number;
+  avgDaysOnMarket: number;
+};
+export type listHousesStatistics = {
+  [key: string]: housesStatistics;
+};
+
+const main = async (): Promise<listHousesStatistics> => {
   const browser = await chromium.launch({
     headless: false,
   });
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  const results = {};
+  const results: listHousesStatistics = {};
 
   await page.goto(`https://www.zillow.com/rental-manager/market-trends`);
 
@@ -23,8 +34,15 @@ const main = async () => {
       const resData = await response.json();
       const data = resData?.data?.marketPage;
 
-      if (data?.areaName && data?.summary) {
-        results[data.areaName] = data.summary;
+      if (data?.areaName && data?.summary && data.summary?.avgDaysOnMarket) {
+        results[`${data.areaName}`] = {
+          medianRent: data.summary.medianRent ?? 0,
+          monthlyChange: data.summary.monthlyChange ?? 0,
+          yearlyChange: data.summary.yearlyChange ?? 0,
+          availableRentals: data.summary.availableRentals ?? 0,
+          avgDaysOnMarket: data.summary.avgDaysOnMarket ?? 0,
+        };
+
         console.log(`=>>>> ${data.areaName} `);
         console.log(data.summary);
         console.log(`<<<<= `);
